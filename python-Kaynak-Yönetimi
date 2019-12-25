@@ -1,0 +1,20 @@
+class File():
+    def __init__(self, fileName, mode):
+        self.fileName = fileName
+        self.mode = mode
+
+    def __enter__(self):
+        self.f = open(self.fileName, self.mode)
+        return self.f
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.f.close()
+
+if __name__ == '__main__':
+    try:
+        with File('test.txt', 'w') as f:
+            f.write('Test')
+    except (KeyboardInterrupt):
+        print('Error !')
+    finally:
+        f.close()
