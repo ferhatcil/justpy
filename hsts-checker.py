@@ -2,6 +2,8 @@ import getopt
 import json
 import sys
 import requests
+import colorama
+from colorama import Fore, Style
 
 VERSION = "1.1"
 
@@ -37,10 +39,10 @@ def hstspreload(domain):
     jsonData = json.loads(r.text)
     for i in jsonData['errors']:
         if 'response.no_header' in i['code']:
-            print(domain + " - Yanıtta HSTS başlığı yok.")
+            print(f"{Fore.RED}"+domain + f" - Yanıtta HSTS başlığı yok.{Style.RESET_ALL}")
         elif 'domain.tls.invalid_cert_chain' in i['code']:
-            print(
-                domain + ", eksik veya geçersiz bir sertifika zinciri kullanıyor. Sitenizi https://www.ssllabs.com/ssltest/analyze.html?viaform=on&d=" + domain + " adresinden inceleyin.")
+            print(f"{Fore.YELLOW}"+
+                domain + ", eksik veya geçersiz bir sertifika zinciri kullanıyor. Sitenizi https://www.ssllabs.com/ssltest/analyze.html?viaform=on&d=" + domain + f" adresinden inceleyin.{Style.RESET_ALL}")
 
 
 def hstspreloadFile(filePath):
